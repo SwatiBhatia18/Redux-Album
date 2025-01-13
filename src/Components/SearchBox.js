@@ -1,117 +1,89 @@
-import React, { useState,useEffect, useCallback } from 'react'
-import ReactDOM, { findDOMNode } from 'react-dom';
-import './SearchBox.css'; 
+import React, { useState, useEffect, useCallback, useRef } from "react"
+import debounce from "lodash.debounce"
+import "./SearchBox.css"
 
-var array = [];
-// var a = [];
-const SearchBox = ({input , setInput }) => {
-  const [array , setArray] = useState([]);
-  const [val, setVal] = useState();
-  // function storeInput(input1){
-  //   if(input1.length >= 2){
-  //     console.log("Ok");
-  //     array = [...array, input1];
-  //     console.log(array); 
-  //   }  
-  //   window.localStorage.setItem("search",JSON.stringify(array));
-  // }
-
- 
-  const [style , setStyle] = useState("searchHide");
-  useEffect(() => {
-    if(input) 
-    {
-      setStyle("searchShow");
-    }
-    if(input.length == 0)
-    {
-      setStyle("searchHide");
-    }
-
-  }, [input]);
-  
+const SearchBox = ({ onSearch }) => {
+  const [input, setInput] = useState("")
+  const [suggestions, setSuggestions] = useState([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const searchBoxRef = useRef(null)
 
   useEffect(() => {
-    const data = JSON.parse(window.localStorage.getItem('search'));
-    if(data)
-    window.localStorage.setItem("search",JSON.stringify(data));
-    else
-    window.localStorage.setItem("search",JSON.stringify(""));
-   
-    // console.log(typeof(data));
-    if ( data) setArray(data);
-  
-  }, []); 
+    const savedSuggestions =
+      JSON.parse(localStorage.getItem("searchSuggestions")) || []
+    setSuggestions(savedSuggestions)
+  }, [])
 
-  useEffect(()=>{
-    let data = JSON.parse(window.localStorage.getItem("search"));
-    console.log(typeof(data));
-    window.localStorage.setItem("search",JSON.stringify([...data , input ]));
-    // let b = [...data , input];
-    // b.toString();
-    // if(b.includes(input))
-    // {
-    //   setArray()
-    // }
-    if(data.indexOf(input) == -1)
-    setArray([...data , input]);
-    
-    
-  },[input])
-  
-  const clickFunc =(item) =>{
-    setInput(item);
-    setVal(item);
-    
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        searchBoxRef.current &&
+        !searchBoxRef.current.contains(event.target)
+      ) {
+        setShowSuggestions(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
+  const debouncedSearch = useCallback(
+    debounce((searchTerm) => {
+      onSearch(searchTerm)
+      if (searchTerm && !suggestions.includes(searchTerm)) {
+        const newSuggestions = [searchTerm, ...suggestions].slice(0, 5)
+        setSuggestions(newSuggestions)
+        localStorage.setItem(
+          "searchSuggestions",
+          JSON.stringify(newSuggestions)
+        )
+      }
+    }, 300),
+    [suggestions, onSearch]
+  )
+
+  const handleChange = (e) => {
+    const value = e.target.value
+    setInput(value)
+    setShowSuggestions(value.length > 0)
+    debouncedSearch(value)
   }
-  // a=[...b]
-//   console.log(a, "check");
-//  console.log(typeof(a));
- const debounce = (func) => {
-   let timer;
-   return function (...args){
-     const context = this;
-     if(timer) clearTimeout(timer)
-     timer = setTimeout( () => {
-       timer = null
-       func.apply(context , args);
-     }, 1000);
-   }
- }
- const handleChange = (e) => {
-   setInput(e.target.value)
-  
- }
 
-  function enter (){
-   console.log("Hey");
-   setStyle("searchHide")
- }
-  const optimisedVersion = useCallback(debounce(handleChange),[])
+  const handleSuggestionClick = (suggestion) => {
+    setInput(suggestion)
+    setShowSuggestions(false)
+    onSearch(suggestion)
+  }
+
   return (
-    <div>
-    {/* < DebounceInput 
-    minLength={3}
-    debounceTimeout={-1}
-    type="text" 
-    placeholder='Type to search photos' 
-    className='input'
-    value={input}
-    onChange={(e)=> {setInput(e.target.value)}}
-    /> */}
-    <input className="input"  value={val} placeholder='Type to search photos'  onChange={optimisedVersion} onKeyPress={(e) => e.key === 'Enter' && enter()}></input>
-    <div className={style}  >
-       
-        {array.map((item) => {
-         
-          return (
-          
-           <div className="list"  onClick={()=>{clickFunc(item)}}>{item}</div>
-           
-
-        )}
-       )}
-    </div>
+    <div className="search-box" ref={searchBoxRef}>
+      <input
+        type="text"
+        value={input}
+        onChange={handleChange}
+        placeholder="Search for images..."
+        className="search-input"
+      />
+      {showSuggestions && (
+        <ul className="suggestions">
+          {suggestions
+            .filter((suggestion) =>
+              suggestion.toLowerCase().includes(input.toLowerCase())
+            )
+            .map((suggestion, index) => (
+              <li
+                key={index}
+                onClick={() => handleSuggestionClick(suggestion)}
+                className="suggestion-item"
+              >
+                {suggestion}
+              </li>
+            ))}
+        </ul>
+      )}
     </div>
   )
 }

@@ -1,69 +1,27 @@
-import { useState } from "react";
+const API_KEY = "6b38ea75acc26996180a238979867806"
 
-// const baseURL = `https://www.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=6b38ea75acc26996180a238979867806&safe_search=1&page=${page}&format=json&nojsoncallback=1`
-// const API_KEY  = process.env.API_KEY
-
-export const getTrendingImages = async(page)=>{
-    const baseURL = `https://www.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=6b38ea75acc26996180a238979867806&safe_search=1&page=${page}&format=json&nojsoncallback=1`
-    try{
-        const res = await fetch(`${baseURL}`, {});
-        if (!res.ok){
-          console.error("failed", res.status);
-                                                                             
-          return;
-        }
-        const json= await res.json(); 
-        return json ;
-    }
-    catch (error){
-        console.error("error in making request", error);
-        }
-}
-// Return the Searched Images 
-export const getSearchedImages = async(query , page)=>{
- 
-   const url = `https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=6b38ea75acc26996180a238979867806&tags=${query}&page=${page}&format=json&nojsoncallback=1`;
-
-    try{
-        const res = await fetch(url, {
-        });
-        console.log(res);
-        if (!res.ok){
-          console.error("failed", res.status);
-                                                                             
-          return;
-        }
-        const json= await res.json(); 
-        return json ;
-    }
-    catch (error){
-        console.error("error in making request", error);
-        }
+export const getTrendingImages = async (page) => {
+  const url = `https://www.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=${API_KEY}&safe_search=1&page=${page}&format=json&nojsoncallback=1`
+  return fetchImages(url)
 }
 
-export const getPage = async(page , query)=>{
-    var url = "";
-    console.log(query);
-    if(query == ""){
-        url = `https://www.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=6b38ea75acc26996180a238979867806&page=${page}&safe_search=3&format=json&nojsoncallback=1`
-        console.log(url);
+export const getSearchedImages = async (query, page) => {
+  const url = `https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=${API_KEY}&text=${encodeURIComponent(
+    query
+  )}&page=${page}&format=json&nojsoncallback=1`
+  return fetchImages(url)
+}
+
+const fetchImages = async (url) => {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
-    else
-    {
-        url = `https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=6b38ea75acc26996180a238979867806&tags=${query}&page=${page}&format=json&nojsoncallback=1`;
-    } 
-     try{
-         const res = await fetch(url, {});
-         if (!res.ok){
-           console.error("failed", res.status);
-                                                                              
-           return;
-         }
-         const json= await res.json(); 
-         console.log(json);
-         return json ;
-     }
-     catch (error){
-         console.error("error in making request", error);
-         }
- }
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error("Error fetching images:", error)
+    return null
+  }
+}

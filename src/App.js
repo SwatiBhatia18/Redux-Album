@@ -1,25 +1,26 @@
-import React,{ useState ,useEffect} from 'react'
-import SearchBox from "./Components/SearchBox";
-import './App.css'
-import Gallery from "./Components/Gallery";
-
+import React, { useState } from "react"
+import SearchBox from "./Components/SearchBox"
+import Gallery from "./Components/Gallery"
+import "./App.css"
 
 function App() {
-  const [input , setInput] = useState("");
+  const [query, setQuery] = useState("")
 
-  let array = [];
-  // useEffect (()=> console.log("Value check", page),[page])
+  const handleSearch = (searchTerm) => {
+    setQuery(searchTerm)
+  }
+
   return (
-
-    <center >
-      <div className="header">
-        <h2>Search Photos</h2>
-        <SearchBox input={input} setInput={setInput} array={array}/>
-      </div>
-      <Gallery query={input} />
-    </center>
-    
-  );
+    <div className="App">
+      <header className="App-header">
+        <h1>Image Search</h1>
+        <SearchBox onSearch={handleSearch} />
+      </header>
+      <main>
+        <Gallery query={query} />
+      </main>
+    </div>
+  )
 }
 
-export default App;
+export default App
